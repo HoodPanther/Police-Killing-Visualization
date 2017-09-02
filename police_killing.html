@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>Americans Killed By the Police</title>
+		<script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
+		<style>
+			body {
+				background-color: #E4FDE1;
+			}
+			
+			h1 {
+				color: #114B5F;
+				font-family: Helvetica;
+			}
+			
+			text {
+				font-family: Helvetica;
+			}
+			
+			.axis path,
+			.axis line {
+				fill: none;
+				shape-rending: crispEdges;
+			}
+			
+			.axis text {
+				font-family:sans-serif;
+				font-size: 11px;
+			}
+			
+			.switch {
+				position:relative;
+				display:inline-block;
+				width:60px;
+				height:34px;
+			}
+			
+			.switch input {display:none;}
+			
+			.slider {
+				position:absolute;
+				cursor:pointer;
+				top:0;
+				left:0;
+				right:0;
+				bottom:0;
+				background-color:#ccc;
+				-webkit-transition:.4s;
+				transition:.4s;
+			}
+
+			
+			.slider:before {
+				position: absolute;
+				content: "";
+				height: 26px;
+				width: 26px;
+				left: 4px;
+				bottom: 4px;
+				background-color: white;
+				-webkit-transition: .4s;
+				transition: .4s;
+			}
+			
+			input:checked + .slider {
+				background-color: black;
+			}
+			
+			
+			input:focus + .slider {
+				box-shadow: 0 0 1px black;
+			}
+			
+			input:checked + .slider:before {
+				-webkit-transform: translateX(26px);
+				-ms-transform: translateX(26px);
+				transform: translateX(26px);
+			}
+			
+			.slider.round{
+				border-radius: 34px;
+			}
+			.slider.round:before {
+				border-radius: 50%;
+			}
+				
+			
+		</style>
+	</head>
+	<body>
+		<h1 font-family=Helvetica> Americans Killed By the Police: 2015</h1>
+		<label class = "switch">
+			<input type="checkbox">
+			<span class="slider round"></span>
+		</label>
+		
+		<script type="text/javascript">
+			
+			//Big SVG Dimensions
+			var w = 1200;
+			var h = 600;
+			
+			//Map Dimensions
+			var map_w = 600;
+			var map_h = 400;
+
+			//Bar Chart Dimensions
+			var bar_w = 250;
+			var bar_h = 150;
+									
+			//Padding
+			var w_padding = Math.round((w - map_w - bar_w)/3);
+			var h_padding = Math.round(h/14);
+			var graph_padding_h = 40;
+			var graph_padding_w = 40; 
+			
+			//Color Scheme
+			var color_points = "#6B2737";
+			var color_points_stroke = "black"
+			var color_map = "#F45B69";
+			var color_bar_graph = "#114B5F";
+			var color_extra = "#242F40";
+			
+			
+			//Switch
+			var switch_val = 0;
+
+			//Map projection
+			var projection = d3.geoAlbersUsa()
+				.translate([map_w/2,map_h/2])
+				.scale([800]);
+				
+			//path generator
+			var map_path = d3.geoPath()
+				.projection(projection);
+				
+			//SVG
+			var svg = d3.select("body")
+				.append("svg")
+				.attr("width",w)
+				.attr("height",h);
+			
+			var map_svg = svg
+				.append("svg")
+				.attr("width",map_w)
+				.attr("height",map_h)
+				.attr("x",w_padding)
+				.attr("y",(h-map_h)/2);
+										
+			var graph1_svg = svg
+				.append("svg")
+				.attr("width",bar_w)
+				.attr("height",bar_h)
+				.attr("x",w-w_padding-bar_w)
+				.attr("y",h_padding);
+				
+			var graph2_svg = svg
+				.append("svg")
+				.attr("width",bar_w)
+				.attr("height",bar_h)
+				.attr("x",w-w_padding-bar_w)
+				.attr("y",(h-bar_h)/2);
+			
+			var graph3_svg = svg
+				.append("svg")
+				.attr("width",bar_w)
+				.attr("height",bar_h)
+				.attr("x",w-w_padding-bar_w)
+				.attr("y",h-h_padding-bar_h);
+			
+			
+			//map	
+			d3.json("us-states.json", function(json) {
+				map_svg.selectAll("path")
+					.data(json.features)
+					.enter()
+					.append("path")
+					.attr("d",map_path)
+					.style("fill",color_map);
+				
+				var group2015 = map_svg.append("g");
+				var group2016 = map_svg.append("g");
+				
+				//locations
+				d3.csv("the-counted-revised-2015.csv", function(data) {
+					group2015.selectAll(".points2015")
+						.data(data)
+						.enter()
+						.append("circle")
+						.attr("class","points2015")
+						.attr("cx", function(d) {
+							return projection([d.lon,d.lat])[0];
+						})
+						.attr("cy", function(d) {
+							return projection([d.lon,d.lat])[1];
+						})
+						.attr("r", 3)
+						.style("fill",color_points)
+						.style("stroke","#191F38")
+						.style("stroke-width",0.25);	
+				});
+				d3.csv("the-counted-revised-2016.csv", function(data) {
+					group2016.selectAll(".points2016")
+						.data(data)
+						.enter()
+						.append("circle")
+						.attr("class","points2016")
+						.attr("cx", function(d) {
+							return projection([d.lon,d.lat])[0];
+						})
+						.attr("cy", function(d) {
+							return projection([d.lon,d.lat])[1];
+						})
+						.attr("r", 3)
+						.style("fill","none")
+						.style("stroke","none")
+						.style("stroke-width",0.25);
+				});				
+			});
+			//graph1: race
+
+			d3.json("race2015.json", function(json) {
+				var values = d3.values(json);
+				var keys = d3.keys(json);
+				
+				var xScale = d3.scaleBand()
+					.domain(keys)
+					.rangeRound([graph_padding_w,bar_w-graph_padding_w])
+					.paddingInner(0.05);
+				
+				var xScale2 = d3.scaleBand()
+					.domain(d3.range(values.length))
+					.rangeRound([graph_padding_w,bar_w-graph_padding_w])
+					.paddingInner(0.05);
+				
+				var xAxis = d3.axisBottom()
+					.scale(xScale);
+							
+				var yScale = d3.scaleLinear()
+					.domain([0,d3.max(values)])
+					.range([bar_h-graph_padding_h,graph_padding_h]);
+				
+				var yAxis = d3.axisLeft()
+					.scale(yScale)
+					.ticks(5);
+				
+				graph1_svg.selectAll("rect")
+					.data(values)
+					.enter()
+					.append("rect")
+					.attr("x", function(d,i) {
+						return xScale2(i);
+					})
+					.attr("y", function(d) {
+						return yScale(d);
+					})
+					.attr("width", xScale.bandwidth())
+					.attr("height", function(d) {
+						return bar_h-graph_padding_h-yScale(d);
+					})
+					.attr("fill", color_bar_graph);	
+
+				graph1_svg.append("g")
+					.attr("class", "x-axis")
+					.attr("transform","translate(0," + (bar_h-graph_padding_h) + ")")
+					.call(xAxis)
+					.selectAll("text")
+					.style("text-anchor","start")
+					.attr("transform-origin","top left")
+					.attr("transform","translate(5,0),rotate(25)")
+					.style("font-size","7px");
+				
+				graph1_svg.append("g")
+					.attr("class", "y-axis")
+					.attr("transform","translate(" + graph_padding_w + ",0)")
+					.call(yAxis);
+				
+				graph1_svg.append("text")
+					.attr("x",bar_w/2)
+					.attr("y", 30)
+					.attr("text-anchor","middle")
+					.style("font-size","16px")
+					.text("Race of Victims");
+					
+			});	
+					
+			//graph 2: armed		
+			d3.json("armed2015.json", function(json) {
+				var values = d3.values(json);
+				var keys = d3.keys(json);
+
+				
+				var xScale = d3.scaleBand()
+					.domain(keys)
+					.rangeRound([graph_padding_w,bar_w-graph_padding_w])
+					.paddingInner(0.05);
+				
+				var xScale2 = d3.scaleBand()
+					.domain(d3.range(values.length))
+					.rangeRound([graph_padding_w,bar_w-graph_padding_w])
+					.paddingInner(0.05);
+				
+				var xAxis = d3.axisBottom()
+					.scale(xScale);
+				
+				var yScale = d3.scaleLinear()
+					.domain([0,d3.max(values)])
+					.range([bar_h-graph_padding_h,graph_padding_h]);
+								
+				var yAxis = d3.axisLeft()
+					.scale(yScale)
+					.ticks(5);
+				
+				graph2_svg.selectAll("rect")
+					.data(values)
+					.enter()
+					.append("rect")
+					.attr("x", function(d,i) {
+						return xScale2(i);
+					})
+					.attr("y", function(d) {
+						return yScale(d);
+					})
+					.attr("width", xScale.bandwidth())
+					.attr("height", function(d) {
+						return bar_h-graph_padding_h-yScale(d);
+					})
+					.attr("fill", color_bar_graph);	
+					
+				graph2_svg.append("g")
+					.attr("class", "x-axis")
+					.attr("transform","translate(0," + (bar_h-graph_padding_h) + ")")
+					.call(xAxis)
+					.selectAll("text")
+					.style("text-anchor","start")
+					.attr("transform-origin","top left")
+					.attr("transform","translate(5,0),rotate(25)")
+					.style("font-size","7px");
+				
+				graph2_svg.append("g")
+					.attr("class", "y-axis")
+					.attr("transform","translate(" + graph_padding_w + ",0)")
+					.call(yAxis);
+				
+				graph2_svg.append("text")
+					.attr("x",bar_w/2)
+					.attr("y", 30)
+					.attr("text-anchor","middle")
+					.style("font-size","16px")
+					.text("Race"); 
+			});
+			//graph 3: cause of death
+			d3.json("how2015.json", function(json) {
+				var values = d3.values(json);
+				var keys = d3.keys(json);
+	
+				var xScale = d3.scaleBand()
+					.domain(keys)
+					.rangeRound([graph_padding_w,bar_w-graph_padding_w])
+					.paddingInner(0.05);
+				
+				var xScale2 = d3.scaleBand()
+					.domain(d3.range(values.length))
+					.rangeRound([graph_padding_w,bar_w-graph_padding_w])
+					.paddingInner(0.05);
+				
+				var xAxis = d3.axisBottom()
+					.scale(xScale);
+								
+				var yScale = d3.scaleLinear()
+					.domain([0,d3.max(values)])
+					.range([bar_h-graph_padding_h,graph_padding_h]);
+
+				var yAxis = d3.axisLeft()
+					.scale(yScale)
+					.ticks(5);
+				
+				graph3_svg.selectAll("rect")
+					.data(values)
+					.enter()
+					.append("rect")
+					.attr("x", function(d,i) {
+						return xScale2(i);
+					})
+					.attr("y", function(d) {
+						return yScale(d);
+					})
+					.attr("width", xScale.bandwidth())
+					.attr("height", function(d) {
+						return bar_h-graph_padding_h-yScale(d);
+					})
+					.attr("fill", color_bar_graph);	
+					
+				graph3_svg.append("g")
+					.attr("class", "x-axis")
+					.attr("transform","translate(0," + (bar_h-graph_padding_h) + ")")
+					.call(xAxis)
+					.selectAll("text")
+					.style("text-anchor","start")
+					.attr("transform-origin","top left")
+					.attr("transform","translate(5,0),rotate(25)")
+					.style("font-size","7px");
+				
+				graph3_svg.append("g")
+					.attr("class", "y-axis")
+					.attr("transform","translate(" + graph_padding_w + ",0)")
+					.call(yAxis);
+				
+				graph3_svg.append("text")
+					.attr("x",bar_w/2)
+					.attr("y", 30)
+					.attr("text-anchor","middle")
+					.style("font-size","16px")
+					.text("Cause of Death"); 
+
+			});
+			
+			//switching between 2015 and 2016
+			d3.select(".slider.round")
+				.on("click", function() {
+					if (switch_val == 0) {
+					
+						switch_val = 1;
+						
+						d3.select("h1")
+							.transition()
+							.text("Americans Killed By the Police: 2016");
+						
+						map_svg.selectAll(".points2015")
+							.transition()
+							.style("fill","none")
+							.style("stroke","none")
+							.duration(2000);
+						
+						map_svg.selectAll(".points2016")
+							.transition()
+							.style("fill",color_points)
+							.style("stroke","#191F38")
+							.duration(2000);
+					
+						//graphs
+						d3.json("race2016.json", function(json) {
+							var values = d3.values(json);
+														
+							var xScale = d3.scaleBand()
+								.domain(d3.range(values.length))
+								.rangeRound([graph_padding_w,bar_w-graph_padding_w])
+								.paddingInner(0.05);
+								
+							var yScale = d3.scaleLinear()
+								.domain([0,d3.max(values)])
+								.range([bar_h-graph_padding_h,graph_padding_h]);
+											
+							var yAxis = d3.axisLeft()
+								.scale(yScale)
+								.ticks(5);
+							
+							graph1_svg.select(".y-axis")
+								.transition()
+								.duration(750)
+								.call(yAxis);
+											
+							graph1_svg.selectAll("rect")
+								.data(values)
+								.transition()
+								.duration(750)
+								.attr("x", function(d,i) {
+									return xScale(i);
+								})
+								.attr("y", function(d) {
+									return yScale(d);
+								})
+								.attr("width", xScale.bandwidth())
+								.attr("height", function(d) {
+									return bar_h-graph_padding_h-yScale(d);
+								});
+							
+						});
+						
+						d3.json("armed2016.json", function(json) {
+							var values = d3.values(json);
+			
+							var xScale = d3.scaleBand()
+								.domain(d3.range(values.length))
+								.rangeRound([graph_padding_w,bar_w-graph_padding_w])
+								.paddingInner(0.05);
+			
+							var yScale = d3.scaleLinear()
+								.domain([0,d3.max(values)])
+								.range([bar_h-graph_padding_h,graph_padding_h]);
+				
+							var yAxis = d3.axisLeft()
+								.scale(yScale)
+								.ticks(5);
+														
+							graph2_svg.select(".y-axis")
+								.transition()
+								.duration(750)
+								.call(yAxis);
+								
+							graph2_svg.selectAll("rect")
+								.data(values)
+								.transition()
+								.duration(750)
+								.attr("x", function(d,i) {
+									return xScale(i);
+								})
+								.attr("y", function(d) {
+									return yScale(d);
+								})
+								.attr("width", xScale.bandwidth())
+								.attr("height", function(d) {
+									return bar_h-graph_padding_h-yScale(d);
+								});
+						});
+						
+						d3.json("how2016.json", function(json) {
+							var values = d3.values(json);
+							
+							var xScale = d3.scaleBand()
+								.domain(d3.range(values.length))
+								.rangeRound([graph_padding_w,bar_w-graph_padding_w])
+								.paddingInner(0.05);
+							
+							var yScale = d3.scaleLinear()
+								.domain([0,d3.max(values)])
+								.range([bar_h-graph_padding_h,graph_padding_h]);
+				
+							var yAxis = d3.axisLeft()
+								.scale(yScale)
+								.ticks(5);
+								
+							graph3_svg.select(".y-axis")
+								.transition()
+								.duration(750)
+								.call(yAxis);	
+									
+							graph3_svg.selectAll("rect")
+								.data(values)
+								.transition()
+								.duration(750)
+								.attr("x", function(d,i) {
+									return xScale(i);
+								})
+								.attr("y", function(d) {
+									return yScale(d);
+								})
+								.attr("width", xScale.bandwidth())
+								.attr("height", function(d) {
+									return bar_h-graph_padding_h-yScale(d);
+								});
+						});
+					} else {
+						switch_val = 0;
+						
+						d3.select("h1")
+							.transition()
+							.text("Americans Killed By the Police: 2015");	
+						
+						map_svg.selectAll(".points2016")
+							.transition()
+							.style("fill","none")
+							.style("stroke","none")
+							.duration(2000);
+						
+						map_svg.selectAll(".points2015")
+							.transition()
+							.style("fill",color_points)
+							.style("stroke","#191F38")
+							.duration(2000);
+
+
+													
+						//graphs
+						d3.json("race2015.json", function(json) {
+							var values = d3.values(json);
+							
+							var xScale = d3.scaleBand()
+								.domain(d3.range(values.length))
+								.rangeRound([graph_padding_w,bar_w-graph_padding_w])
+								.paddingInner(0.05);
+								
+							var yScale = d3.scaleLinear()
+								.domain([0,d3.max(values)])
+								.range([bar_h-graph_padding_h,graph_padding_h]);
+				
+							var yAxis = d3.axisLeft()
+								.scale(yScale)
+								.ticks(5);							
+							
+							graph1_svg.select(".y-axis")
+								.transition()
+								.duration(750)
+								.call(yAxis);
+									
+							graph1_svg.selectAll("rect")
+								.data(values)
+								.transition()
+								.duration(750)
+								.attr("x", function(d,i) {
+									return xScale(i);
+								})
+								.attr("y", function(d) {
+									return yScale(d);
+								})
+								.attr("width", xScale.bandwidth())
+								.attr("height", function(d) {
+									return bar_h-graph_padding_h-yScale(d);
+								});
+						});
+						
+						d3.json("armed2015.json", function(json) {
+							var values = d3.values(json);
+							
+							var xScale = d3.scaleBand()
+								.domain(d3.range(values.length))
+								.rangeRound([graph_padding_w,bar_w-graph_padding_w])
+								.paddingInner(0.05);
+		
+							var yScale = d3.scaleLinear()
+								.domain([0,d3.max(values)])
+								.range([bar_h-graph_padding_h,graph_padding_h]);
+			
+							var yAxis = d3.axisLeft()
+								.scale(yScale)
+								.ticks(5);							
+							
+							graph2_svg.select(".y-axis")
+								.transition()
+								.duration(750)
+								.call(yAxis);
+					
+							graph2_svg.selectAll("rect")
+								.data(values)
+								.transition()
+								.duration(750)
+								.attr("x", function(d,i) {
+									return xScale(i);
+								})
+								.attr("y", function(d) {
+									return yScale(d);
+								})
+								.attr("width", xScale.bandwidth())
+								.attr("height", function(d) {
+									return bar_h-graph_padding_h-yScale(d);
+								});
+						});
+						
+						d3.json("how2015.json", function(json) {
+							var values = d3.values(json);
+			
+							var xScale = d3.scaleBand()
+								.domain(d3.range(values.length))
+								.rangeRound([graph_padding_w,bar_w-graph_padding_w])
+								.paddingInner(0.05);
+
+							var yScale = d3.scaleLinear()
+								.domain([0,d3.max(values)])
+								.range([bar_h-graph_padding_h,graph_padding_h]);
+			
+							var yAxis = d3.axisLeft()
+								.scale(yScale)
+								.ticks(5);
+							
+							graph3_svg.select(".y-axis")
+								.transition()
+								.duration(750)
+								.call(yAxis);
+								
+							graph3_svg.selectAll("rect")
+								.data(values)
+								.transition()
+								.duration(750)
+								.attr("x", function(d,i) {
+									return xScale(i);
+								})
+								.attr("y", function(d) {
+									return yScale(d);
+								})
+								.attr("width", xScale.bandwidth())
+								.attr("height", function(d) {
+									return bar_h-graph_padding_h-yScale(d);
+								});
+						});
+					};
+				});
+										
+
+		</script>
+	</body>
+</html>
+					
+						
+					
+			
