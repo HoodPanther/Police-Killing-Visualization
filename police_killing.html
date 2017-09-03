@@ -5,17 +5,24 @@
 		<title>Americans Killed By the Police</title>
 		<script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
 		<style>
+			@import url('https://fonts.googleapis.com/css?family=Open+Sans');
+			
+			@font-face {
+				font-family: "Open Sans";
+				src: url("https://fonts.googleapis.com/css?family=Open+Sans");
+			}
+			
 			body {
-				background-color: #E4FDE1;
+				background-color: #ECB99D;
 			}
 			
 			h1 {
-				color: #114B5F;
-				font-family: Helvetica;
+				color: 'black';
+				font-family: Open Sans;
 			}
 			
 			text {
-				font-family: Helvetica;
+				font-family: Open Sans;
 			}
 			
 			.axis path,
@@ -64,7 +71,7 @@
 			}
 			
 			input:checked + .slider {
-				background-color: black;
+				background-color: #640209;
 			}
 			
 			
@@ -116,10 +123,10 @@
 			var graph_padding_w = 40; 
 			
 			//Color Scheme
-			var color_points = "#6B2737";
-			var color_points_stroke = "black"
-			var color_map = "#F45B69";
-			var color_bar_graph = "#114B5F";
+			var color_map = "#640209";
+			var color_points = "#D5775F";
+			var color_points_stroke = "#861C19"
+			var color_bar_graph = "#C05643";
 			var color_extra = "#242F40";
 			
 			
@@ -281,7 +288,7 @@
 					.attr("y", 30)
 					.attr("text-anchor","middle")
 					.style("font-size","16px")
-					.text("Race of Victims");
+					.text("Race");
 					
 			});	
 					
@@ -348,7 +355,7 @@
 					.attr("y", 30)
 					.attr("text-anchor","middle")
 					.style("font-size","16px")
-					.text("Race"); 
+					.text("Victims' Arms"); 
 			});
 			//graph 3: cause of death
 			d3.json("how2015.json", function(json) {
